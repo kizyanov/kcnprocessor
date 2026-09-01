@@ -13,9 +13,9 @@ use crate::core::repository_traits::{
     OrderCommand, OrderQuery, SymbolQuery,
 };
 use crate::logic::order_handlers::make_random_trade;
-use crate::logic::utils::generate_entry_id;
 use crate::logic::utils::{
-    format_assert_decimal, sl_buy_percent, sl_sell_percent, tp_buy_percent, tp_sell_percent,
+    format_assert_decimal, generate_entry_id, sl_buy_percent, sl_sell_percent, tp_buy_percent,
+    tp_sell_percent,
 };
 use anyhow::Result;
 use micromap::Map;
@@ -484,36 +484,26 @@ pub async fn process_bot_by_exit_tp_client_oid(
         }
     };
 
-    match order.side {
+    let new_balance = match order.side {
         OrderSide::Buy => {
             let old_balance = bot.balance_decimal()?;
-            let new_balance = old_balance + old_balance - return_balance;
-            bot_repo
-                .update_balance_and_clear_symbol_by_exit_tp(
-                    client_oid,
-                    &new_balance.trunc_with_scale(4).to_string(),
-                )
-                .await?;
-            make_random_trade(bot_repo, symbol_repo, sendorders_repo, new_balance, bot.id).await?;
+            old_balance + old_balance - return_balance
         }
-        OrderSide::Sell => {
-            bot_repo
-                .update_balance_and_clear_symbol_by_exit_tp(
-                    client_oid,
-                    &return_balance.trunc_with_scale(4).to_string(),
-                )
-                .await?;
-            make_random_trade(
-                bot_repo,
-                symbol_repo,
-                sendorders_repo,
-                return_balance,
-                bot.id,
-            )
-            .await?;
+        OrderSide::Sell => return_balance,
+        OrderSide::Unknown => {
+            error!("OrderSide is {}", order.side);
+            anyhow::bail!("OrderSide is {}", order.side)
         }
-        OrderSide::Unknown => {}
-    }
+    };
+
+    bot_repo
+        .update_balance_and_clear_symbol_by_exit_tp(
+            client_oid,
+            &new_balance.trunc_with_scale(4).to_string(),
+        )
+        .await?;
+
+    make_random_trade(bot_repo, symbol_repo, sendorders_repo, new_balance, bot.id).await?;
     Ok(())
 }
 

@@ -690,12 +690,9 @@ pub struct Bot {
     pub id: i32,
     balance: String,
     pub entry_client_oid: Option<String>,
-    pub entry_price: Option<String>,
-    pub exit_tp_order_id: Option<String>,
-    pub exit_tp_price: Option<String>,
+
     pub exit_tp_client_oid: Option<String>,
-    pub exit_sl_order_id: Option<String>,
-    pub exit_sl_price: Option<String>,
+
     pub exit_sl_client_oid: Option<String>,
 }
 
@@ -734,7 +731,7 @@ impl fmt::Display for AdvancedOrders {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "OrderData {{ created_at: {}, funds: {:?}, size: {:?}, order_id: {}, order_type: {}, side: {:?}, stop: {:?}, stop_price: {:?}, symbol: {}, trade_type: {:?}, ts: {:?}, type_: {:?}, error: {:?}}}",
+            "AdvancedOrders {{ created_at: {}, funds: {:?}, size: {:?}, order_id: {}, order_type: {}, side: {:?}, stop: {:?}, stop_price: {:?}, symbol: {}, trade_type: {:?}, ts: {:?}, type_: {:?}, error: {:?}}}",
             self.created_at,
             self.funds,
             self.size,

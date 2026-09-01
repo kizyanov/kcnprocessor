@@ -1,6 +1,6 @@
 use crate::api::models::{
     ApiV1MarketOrderbookLevel1ResData, ApiV3MarginRepayResData, MarginAccountData, OrderAmount,
-    OrderSide, OrderType,
+    OrderSide, OrderType, Symbol,
 };
 use crate::api::requests::{
     api_v1_market_orderbook_level1_get, api_v3_accounts_universal_transfer_post,
@@ -163,7 +163,7 @@ async fn handle_non_usdt_account(
     trade_symbol: &str,
     liability: Decimal,
     available: Decimal,
-    symbol_info: &crate::api::models::Symbol,
+    symbol_info: &Symbol,
     precision: Decimal,
 ) -> Result<bool> {
     let mut passed = true;
@@ -201,7 +201,7 @@ async fn handle_liability(
     trade_symbol: &str,
     liability: Decimal,
     available: Decimal,
-    symbol_info: &crate::api::models::Symbol,
+    symbol_info: &Symbol,
     precision: Decimal,
 ) -> Result<bool> {
     if available > Decimal::ZERO {
@@ -225,7 +225,7 @@ async fn handle_liability(
         let min_funds_by_size = best_ask_token_price * base_min_size;
         let quote_increment = symbol_info.quote_increment_decimal()?;
 
-        let size = format_assert_decimal(
+        let funds = format_assert_decimal(
             token_funds.max(min_funds_by_size).max(min_funds),
             quote_increment,
         )?;
@@ -235,13 +235,13 @@ async fn handle_liability(
             &generate_entry_id(),
             OrderSide::Buy,
             trade_symbol,
-            OrderAmount::Size(size.clone()),
+            OrderAmount::Funds(funds.clone()),
             OrderType::Market,
             false,
             false,
         )
         .await?;
-        info!("Buy by market {} on size {}", trade_symbol, size);
+        info!("Buy by market {} on size {}", trade_symbol, funds);
     }
     Ok(false)
 }
@@ -252,7 +252,7 @@ async fn handle_available(
     currency: &str,
     trade_symbol: &str,
     available: Decimal,
-    symbol_info: &crate::api::models::Symbol,
+    symbol_info: &Symbol,
     precision: Decimal,
 ) -> Result<bool> {
     let base_min_size = symbol_info.base_min_size_decimal()?;
